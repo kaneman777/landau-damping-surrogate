@@ -98,7 +98,8 @@ def smooth(x):
 
     y = np.zeros_like(x)
     N = len(x)
-    y[[0, -1]] = x[[0, -1]]
+    y[0] = x[0]
+    y[N - 1] = x[N - 1]
 
     for i in np.arange(1, N-2):
         y[i] = (2*x[i] + x[i-1] + x[i+1])/4

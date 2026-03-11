@@ -70,3 +70,30 @@ target/
 dev.ipynb
 
 *.h5
+
+# Data files (巨大なのでGitHubには上げない)
+*.npy
+*.csv
+sweep_2d_results/
+
+# 巨大なデータファイルとフォルダを完全に除外
+data/
+output_data/
+sweep_2d_results/
+cases/
+*.npy
+*.csv
+
+# 画像やプロット結果（README用以外）
+output_plots/
+*.png
+*.jpg
+*.pdf
+
+# プロファイルデータ
+program.prof
+
+# 仮想環境やipynbのチェックポイント
+.ipynb_checkpoints/
+venv/
+.env

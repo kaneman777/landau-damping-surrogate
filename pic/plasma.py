@@ -2,10 +2,10 @@
 import numpy as np
 import pickle
 
-from particles import particles
-from functions import (max_vect, numba_interp1D_normed, numba_return_part_diag)
-from constantes import (me, q, eps_0, mi)
-from poisson_solver import Poisson_Solver
+from pic.particles import particles
+from pic.functions import (max_vect, numba_interp1D_normed, numba_return_part_diag)
+from pic.constantes import (me, q, eps_0, mi)
+from pic.poisson_solver import Poisson_Solver
 import h5py
 
 
@@ -233,7 +233,7 @@ class plasma:
                                        self.ele.V[:, 0].max()]
                 tempHist, _ = np.histogram(self.ele.V[:, 0], bins=Nbins,
                                            range=self.hist_ele_range,
-                                           normed=True)
+                                           density=True)
 
                 self.hist_ele = np.array(tempHist, dtype="float")
                 self.hist_ele_0 = self.hist_ele
@@ -291,7 +291,7 @@ class plasma:
             self.Qe += temp_Qe*me/q
             tempHist, _ = np.histogram(self.ele.V[:, 0], bins=Nbins,
                                        range=self.hist_ele_range,
-                                       normed=True)
+                                       density=True)
             self.hist_ele += np.array(tempHist, dtype="float")
             # Save data in dictionary if it is the last time step
             if np.mod(nt - self.n_0 + 1, self.n_average) == 0:
@@ -340,7 +340,7 @@ class plasma:
         return filename + "." + term
 
     def validated(self):
-        from gui import GUI
+        from pic.gui import GUI
         from tkinter import Tk
 
         root = Tk()

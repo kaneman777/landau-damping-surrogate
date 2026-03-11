@@ -2,7 +2,7 @@
 
 
 import numpy as np
-from functions import numba_thomas_solver
+from pic.functions import numba_thomas_solver
 
 
 class Poisson_Solver(object):

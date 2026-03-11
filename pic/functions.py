@@ -6,7 +6,7 @@ from numba import jit
 
 import random
 
-from constantes import q
+from pic.constantes import q
 
 numbaparallel = False
 

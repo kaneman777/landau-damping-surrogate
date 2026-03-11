@@ -1,117 +1,99 @@
-# import
 import numpy as np
-import astropy
-
 import matplotlib.pyplot as plt
+import os
+from pic.constantes import (me, q, kb, eps_0)
+from simulation import run_simulation
 
+def save_comparison_plot(result, te_val, lx_val, gamma_theory, fname):
+    """2次元スイープ用の比較プロット保存"""
+    plt.figure(figsize=(10, 6))
+    plt.semilogy(result['t_energy'], result['energy_history'], label='Field Energy (PIC)', color='blue', alpha=0.7)
+    
+    t_theory = result['t_energy']
+    E_theory = result['energy_history'][0] * np.exp(-2 * gamma_theory * t_theory)
+    plt.semilogy(t_theory, E_theory, 'r--', label=f'Theory (gamma={gamma_theory:.2e})')
+    
+    # 物理指標の計算
+    n_m3 = result['params']['n'] * 1e6
+    Lx_m = lx_val * 1e-2
+    w_pe = np.sqrt(n_m3 * q**2 / (me * eps_0))
+    v_th = np.sqrt(kb * (te_val * 11604.5) / me)
+    k_val = 2 * np.pi / Lx_m
+    kld = k_val * (v_th / w_pe)
+    
+    plt.title(f"Sweep: Te={te_val}eV, Lx={lx_val}cm (k*Ld={kld:.3f})")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Energy (log)")
+    plt.grid(True, which="both", alpha=0.3)
+    plt.legend(loc='lower left')
+    
+    # パラメータ情報を刻印
+    info = f"Te: {te_val}eV\nLx: {lx_val}cm\nk*Ld: {kld:.3f}\ngamma: {gamma_theory:.2e}"
+    plt.gca().text(0.95, 0.95, info, transform=plt.gca().transAxes, fontsize=9,
+                   verticalalignment='top', horizontalalignment='right',
+                   bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+    
+    plt.savefig(fname)
+    plt.close()
 
-import pic
-from pic.plasma import plasma
-from pic.particles import particles
-from pic.functions import (generate_maxw, velocity_maxw_flux, max_vect,
-                           fux_vect, numba_return_density, smooth)
-from pic.constantes import (me, q, kb, eps_0, mi)
+if __name__ == "__main__":
+    # フォルダ自動作成
+    os.makedirs("sweep_2d_results/data", exist_ok=True)
+    os.makedirs("sweep_2d_results/plots", exist_ok=True)
 
-from pic.gui import LivePlot
+    # 2次元パラメータリスト
+    te_list = [100, 300, 500, 700, 900, 1100, 1300, 1500]
+    lx_list = [0.005, 0.01, 0.015, 0.02] # システムサイズ（波長）を振る
 
-import pickle
+    total = len(te_list) * len(lx_list)
+    count = 0
 
-# parameters
-Lx = 1e-2  # System length
-dX = 0.7e-5  # dX in m
-Nx = int(Lx/dX)  # cell number
-Lx = Nx*dX
-print("Nx = {Nx}, and Lx = {Lx} cm".format(Nx=Nx, Lx=Lx*100))
+    print(f"Starting 2D sweep: {total} cases. Good night!")
 
-Npart = 60*Nx  # particles number, calculated via particle par cell
-n = 3e17   # [m^-3]
-dT = 3e-12  # time step
-Te_0 = 50     # [eV] Electron distribution temperature
-Ti_0 = 10  # [eV]
+    for lx in lx_list:
+        for te in te_list:
+            count += 1
+            tag = f"Lx{lx}_Te{te}"
+            print(f"[{count}/{total}] Running: {tag} ...")
+            
+            params = {
+                "Lx": lx,
+                "dX": 1e-4,
+                "n": 1e16,
+                "dT": 1e-12,
+                "Te_0": te,
+                "Ti_0": 10,
+                "Npart_factor": 100,
+                "n_average": 5000,
+                "sim_time": 1e-7,
+                "verbose": False,
+            }
 
-L_De = np.sqrt(eps_0*Te_0/(q*n))
-wpe = np.sqrt(n*q**2/(eps_0*me))
+            # 実行
+            result = run_simulation(params, use_restart=False)
 
-print(f"L_de = {L_De*1e3:2.3f} mm, dX = {dX*1e3:2.2f} mm")
-print(f"time step dT = {dT*1e12:2.2f} mu s, wpe = {wpe**(-1)*1e12:2.2f} mus")
+            # 理論値ガンマ計算
+            n_m3 = params['n'] * 1e6
+            Lx_m = params['Lx'] * 1e-2
+            w_pe = np.sqrt(n_m3 * q**2 / (me * eps_0))
+            v_th = np.sqrt(kb * (te * 11604.5) / me)
+            lambda_d = v_th / w_pe
+            k_val = 2 * np.pi / Lx_m
+            kld = k_val * lambda_d
+            # 線形ランダウ減衰の公式
+            gamma_theory = np.sqrt(np.pi/8) * (w_pe / kld**3) * np.exp(-1/(2*kld**2) - 1.5)
 
-restartFileName = "data/restart_pla.dat"
+            # データ保存 (AI学習用メタデータ込み)
+            np.save(f"sweep_2d_results/data/data_{tag}.npy", {
+                't': result['t_energy'],
+                'energy': result['energy_history'],
+                'te': te,
+                'lx': lx,
+                'kld': kld,
+                'gamma': gamma_theory
+            })
+            
+            # プロット保存
+            save_comparison_plot(result, te, lx, gamma_theory, f"sweep_2d_results/plots/plot_{tag}.png")
 
-try:
-    pla = pickle.load(open(restartFileName, "rb"))
-except:
-    print("\n restart not found : initialisation   ")
-    pla = plasma(dT, Nx, Lx, Npart, n, Te_0, Ti_0, n_average=2000)
-
-if not pla.v:
-    exit()
-
-Nt = int(2e-6/dT)
-pla.Do_diags = True
-pla.n_0 = 0  # int(Nt/2)
-
-doPlots = False
-
-#  _______   ______       __        ______     ______   .______     _______.
-# |       \ /  __  \     |  |      /  __  \   /  __  \  |   _  \   /       |
-# |  .--.  |  |  |  |    |  |     |  |  |  | |  |  |  | |  |_)  | |   (----`
-# |  |  |  |  |  |  |    |  |     |  |  |  | |  |  |  | |   ___/   \   \
-# |  '--'  |  `--'  |    |  `----.|  `--'  | |  `--'  | |  |   .----)   |
-# |_______/ \______/     |_______| \______/   \______/  | _|   |_______/
-#
-
-tabstr = ["phi", "Te", "ni", "ne", "ve", "rho"]
-if doPlots:
-    PlotObject = LivePlot(pla.x_j, tabstr)
-
-    limites = {'phi': [-10, 150],
-               "ni": [0, 4.5e17],
-               "ne": [0, 4e17],
-               "Te": [0, 50],
-               "ve": [-3e5, 3e5],
-               "rho": [-1e17, 2e17],
-               }
-    for ax, st in zip(PlotObject.axarr, tabstr):
-        ax.set_ylim(*limites[st])
-
-    plt.show()
-
-dataFileName = pla.create_filename("data/run5", "h5")
-
-
-for nt in np.arange(Nt):
-    pla.pusher()
-    pla.boundary()
-    pla.compute_rho()
-    pla.solve_poisson()
-    pla.diags(nt)
-
-    if np.mod(nt - pla.n_0 + 1, pla.n_average) == 0:
-        toopen = True if nt < pla.n_average else False
-        pla.save_data_HDF5(dataFileName, True)
-
-        # try:
-        if doPlots:
-            PlotObject.updatevalue(pla.data[pla.lastkey], nt, Nt, dT)
-        # except:
-            # print(len(pla.x_j),len(pla.data[pla.lastkey]["phi"]),len(pla.data[pla.lastkey]["ni"]),len(pla.data[pla.lastkey]["ne"]))
-
-        print("\r t = {:2.5f} over {:2.5f} mu s".format(
-              nt*pla.dT*1e6, Nt*pla.dT*1e6),
-              end="")
-        # print("\r t = {} over {} mu s".format(len(pla.ele.x),len(pla.ion.x)),end="")
-
-        if np.mod(nt - pla.n_0 + 1, 100*pla.n_average) == 0:
-            pickle.dump(pla, open(restartFileName, 'wb'))
-
-        pla.f.close()
-#
-#      _______.     ___   ____    ____  _______     _______       ___   .___________.    _
-#     /       |    /   \  \   \  /   / |   ____|   |       \     /   \  |           |
-#    |   (----`   /  ^  \  \   \/   /  |  |__      |  .--.  |   /  ^  \ `---|  |----`  /
-#     \   \      /  /_\  \  \      /   |   __|     |  |  |  |  /  /_\  \    |  |      /  /
-# .----)   |    /  _____  \  \    /    |  |____    |  '--'  | /  _____  \   |  |     /  __
-# |_______/    /__/     \__\  \__/     |_______|   |_______/ /__/     \__\  |__|    /__/
-
-
-# pla.save_data("Data_both.dat")
+    print("\n[SUCCESS] 2D Sweep completed. Check 'sweep_2d_results/'")

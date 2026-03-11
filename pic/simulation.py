@@ -1,10 +1,10 @@
-from particles import particles
-from functions import (numba_interp1D, generate_maxw, numba_interp1D_normed,
-                       velocity_maxw_flux, numba_return_part_diag)
+from pic.particles import particles
+from pic.functions import (numba_interp1D, generate_maxw, numba_interp1D_normed,
+                           velocity_maxw_flux, numba_return_part_diag)
 from numba import jit
-from constantes import (me, q, kb, eps_0, mi)
+from pic.constantes import (me, q, kb, eps_0, mi)
 
-from plasma import plasma
+from pic.plasma import plasma
 
 from collections import namedtuple
 

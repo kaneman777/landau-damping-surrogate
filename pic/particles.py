@@ -2,8 +2,8 @@
 
 import numpy as np
 
-from functions import (popout, max_vect, fux_vect,
-                       numba_return_part_diag, mirror_vect)
+from pic.functions import (popout, max_vect, fux_vect,
+                           numba_return_part_diag, mirror_vect)
 from numpy.random import rand
 
 
