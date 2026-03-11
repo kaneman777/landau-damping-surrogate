@@ -1,74 +1,40 @@
-# 1D Particle-In-Cells Electrostatic simulation
-### For plasma simulation.
+# 1D-PIC Plasma Simulation with AI Surrogate Model
 
-A PIC simulation code moves particles (electrons and ions) on a given domain. It couple the motion of the particles with the generated electric and magnetic field.
+This repository is a fork of [Antoine Tavant's 1D-PIC](https://github.com/antoinelpp/1d-pic-electrostatic), extended with a **Neural Network-based Surrogate Model** to accelerate plasma response predictions.
+
+## 🌟 Major Extension: AI Surrogate Model (v0.1)
+I have developed an AI surrogate to predict electric field energy decay (Landau Damping) without running the full PIC simulation.
+
+### Performance Highlights
+- **Speedup**: Achieved ~200ms per query (Total), with **pure inference time < 1ms**. This is approximately **600,000x faster** than the original 1D-PIC simulation.
+- **Accuracy**: Reached an MSE of **0.055** (log-scale) across various electron temperatures ($T_e$).
+- **Capability**: Successfully predicts "extrapolated" physics beyond the training range (e.g., $T_e = 2000$ eV).
 
 
-#### This Simulation code is 1D Electrostatic :
-* Only the Poisson equation is solved, generating a self-consistent electric field
-* The particles are moved in one direction, even is there velocity is defined in 3D
 
-#### Applications
-We can use it to study interesting 1D kinetic effects such as plasma instabilities, to improve existing models, or to illustrate plasma lectures.
+## 🛠 Project Roadmap
+My goal is to refine this into a "Physics-Informed" model for robust research use:
+1. **Data Denoising**: Implement Savitzky-Golay filters to remove numerical spikes from PIC data.
+2. **Physics-Informed Constraints**: Add monotonicity loss to ensure physical energy decay.
+3. **Advanced Architecture**: Exploring **FNO (Fourier Neural Operator)** for superior spectral denoising.
 
-**The advantage** of a PIC code is that the equations are simple to solve.
-**The disadvantage** of a PIC code is that it as to deal with **LOTS** of particles. The performance is a big issue
+---
 
 ## Getting Started
-
 ### Prerequisites
-This code only uses Python and standard Python modules:
-> Numpy,
-> Numba,
-> tkinter,
-> matplotlib,
-> Pytest
+- Python 3.x
+- PyTorch (for Surrogate Model)
+- Numpy, Numba, Matplotlib
 
-Because performance is a really big issue, I compared different functions from different modules, but most of the time the fastest solution was to use `Numba.jit`.
-Is is true by example for interpolation and density estimation.
+### How to Run
+- `main.py`: Original 1D-PIC simulation.
+- `surrogate/train.py`: Train the neural network.
+- `surrogate/quick_test.py`: Benchmark the AI prediction speed and accuracy.
 
-### Installing
-
-You just need to clone the repo, and you should be able to execute both main files `main.py` and `Main.ipynb`
-
-
-## Contributing
-
-Feel free to fork and contribute to the code.
-However, I should specify that this project's main objective is to test solutions for the [PlasmaPy project](https://github.com/PlasmaPy/PlasmaPy). Hence, contributing to PlasmaPy could be more interesting.
-
-### Todo list
-
-* Physic and Solvers
-- [x] Electrostatic particle pusher (Leap-frog scheme)
-- [ ] Electromagnetic particle pusher (Boris scheme)
-- [x] Poisson solver (Thomas's algorithm)
-- [x] Wall boundary conditions
-- [x] periodic boundary conditions
-
-* interface and user experience
-- [ ] GUI for initialisation
-- [x] GUI of the evolution of the simulation
-- [x] diagnostics (data output)
-- [ ] Restars
-
-* Software part
-- [x] Tests
-- [ ] 95 % Coverage
-- [ ] Performance profiling
-- [ ] Continuous integration
-- [ ] Parallelistation
-
-## Authors
-* [Antoine Tavant](https://github.com/antoinelpp)
+## Authors & Acknowledgments
+- **Surrogate Model**: [Your Name/GitHub Name]
+- **Original PIC Code**: [Antoine Tavant](https://github.com/antoinelpp)
+- **Special Thanks**: Professor Shinsuke Fujioka (Osaka Univ.) for the surrogate research inspiration.
 
 ## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-I have to think about it ! The list of my references is long, even though this project is only my own...
-I'd say mostly Vivien Croes and Trevor Lafleur, for now.
-
-I'll improve the list later.
+This project is licensed under the MIT License.
