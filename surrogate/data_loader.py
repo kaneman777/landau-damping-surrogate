@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import glob
 import os
+from scipy.signal import savgol_filter
 
 def load_and_preprocess(data_dir="sweep_2d_results/data"):
     all_inputs = []
@@ -26,8 +27,14 @@ def load_and_preprocess(data_dir="sweep_2d_results/data"):
         start_idx = int(len(t) * 0.05)
         t_s, e_s = t[start_idx:], energy[start_idx:]
 
-        # 対数スケール (Energy -> Log10)
+        #1 対数スケール (Energy -> Log10)
         log_e = np.log10(np.maximum(e_s, 1e-25))
+
+        # 2. 【ここに追加！】クレンジング（平滑化）
+        # window_length: 51（500点に対して約1割の窓幅）
+        # polyorder: 3（3次多項式で近似）
+        if len(log_e) > 51: # データ点数が窓幅より多い場合のみ実行
+            log_e = savgol_filter(log_e, window_length=51, polyorder=3)
 
         for i in range(len(t_s)):
             all_inputs.append([te, lx, t_s[i]])

@@ -18,6 +18,11 @@ My goal is to refine this into a "Physics-Informed" model for robust research us
 2. **Physics-Informed Constraints**: Add monotonicity loss to ensure physical energy decay.
 3. **Advanced Architecture**: Exploring **FNO (Fourier Neural Operator)** for superior spectral denoising.
 
+### Current Challenge (March 12)
+Currently testing a **Physics-Informed (PI) MLP** with monotonic energy decay constraints.  
+However, we still observe some numerical instabilities and non-physical energy spikes, likely due to overfitting high-frequency numerical noise in the PIC data.  
+**Next step:** move to an **FNO (Fourier Neural Operator)**–based surrogate to better filter spectral noise and capture smooth decay behavior.
+
 ---
 
 ## Getting Started
@@ -25,6 +30,16 @@ My goal is to refine this into a "Physics-Informed" model for robust research us
 - Python 3.x
 - PyTorch (for Surrogate Model)
 - Numpy, Numba, Matplotlib
+
+### Recommended: venv setup (Windows / PowerShell)
+
+```powershell
+cd C:\Users\takum\Documents\Research\Independent_Research\1D_PIC
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -U pip
+pip install -r requirements.txt
+```
 
 ### How to Run
 - `main.py`: Original 1D-PIC simulation.

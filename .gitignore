@@ -97,3 +97,4 @@ program.prof
 .ipynb_checkpoints/
 venv/
 .env
+.venv/
