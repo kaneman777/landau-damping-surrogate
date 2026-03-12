@@ -1,27 +1,32 @@
-# 1D-PIC Plasma Simulation with AI Surrogate Model
+# 1D-PIC Plasma Simulation + WIP Surrogate Model
 
-This repository is a fork of [Antoine Tavant's 1D-PIC](https://github.com/antoinelpp/1d-pic-electrostatic), extended with a **Neural Network-based Surrogate Model** to accelerate plasma response predictions.
+This repository is a fork of [Antoine Tavant's 1D-PIC](https://github.com/antoinelpp/1d-pic-electrostatic), plus my own experiments with a **neural-network surrogate** for Landau damping.  
+Everything is still **work in progress** – numbers and models will likely change.
 
-## 🌟 Major Extension: AI Surrogate Model (v0.1)
-I have developed an AI surrogate to predict electric field energy decay (Landau Damping) without running the full PIC simulation.
+## Current Status (2026-03-12)
 
-### Performance Highlights
-- **Speedup**: Achieved ~200ms per query (Total), with **pure inference time < 1ms**. This is approximately **600,000x faster** than the original 1D-PIC simulation.
-- **Accuracy**: Reached an MSE of **0.055** (log-scale) across various electron temperatures ($T_e$).
-- **Capability**: Successfully predicts "extrapolated" physics beyond the training range (e.g., $T_e = 2000$ eV).
+- **PIC side**
+  - 1D electrostatic PIC is running and validated against a standard Landau damping test.
+  - Electric field energy \( \sum E^2 \) is stored every time step for use as training data.
 
+- **Surrogate side (MLP, WIP)**
+  - Input: \([T_e, L_x, t]\), Output: \(\log_{10}(E(t))\).
+  - Data is preprocessed with:
+    - initial-transient cut (first ~5% in time),
+    - log-scale transform,
+    - Savitzky–Golay smoothing to reduce numerical spikes.
+  - Training uses a **physics-informed loss** that penalizes \( \partial E / \partial t > 0 \) to encourage monotonic decay.
 
+### Known Issues / Limitations
+- The current MLP surrogate is **not production‑ready**:
+  - still shows non-physical bumps for some parameters,
+  - is sensitive to high-frequency numerical noise in PIC outputs,
+  - has not been systematically benchmarked (no solid error numbers yet).
 
-## 🛠 Project Roadmap
-My goal is to refine this into a "Physics-Informed" model for robust research use:
-1. **Data Denoising**: Implement Savitzky-Golay filters to remove numerical spikes from PIC data.
-2. **Physics-Informed Constraints**: Add monotonicity loss to ensure physical energy decay.
-3. **Advanced Architecture**: Exploring **FNO (Fourier Neural Operator)** for superior spectral denoising.
-
-### Current Challenge (March 12)
-Currently testing a **Physics-Informed (PI) MLP** with monotonic energy decay constraints.  
-However, we still observe some numerical instabilities and non-physical energy spikes, likely due to overfitting high-frequency numerical noise in the PIC data.  
-**Next step:** move to an **FNO (Fourier Neural Operator)**–based surrogate to better filter spectral noise and capture smooth decay behavior.
+### Next Steps
+1. Tune the physics-informed loss (weight, schedule) and smoothing parameters.
+2. Try **FNO (Fourier Neural Operator)** or other spectral architectures to better filter noise.
+3. Add proper evaluation scripts and plots to quantify generalization and failure modes.
 
 ---
 
