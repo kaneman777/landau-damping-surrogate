@@ -13,7 +13,7 @@ Everything here is **work in progress** — models, metrics, and scripts may cha
 
 ## Current status (2026-03)
 
-- **PIC**: Runs; Landau-type setups used to build training curves.
+- **PIC**: Runs and is validated against a standard Landau damping test; Landau-type setups are used to build training curves.
 - **Data**: Each `.npy` stores `t`, `energy`, `te`, `lx`, `kld`, `gamma` (and friends) for surrogate loading.
 - **Surrogate**
   - **MLP** (`surrogate/train.py`): pointwise prediction with optional physics-informed penalty (decay tendency). Inputs are typically \([T_e, L_x, t]\) after preprocessing.
@@ -23,6 +23,7 @@ Everything here is **work in progress** — models, metrics, and scripts may cha
 ### Limitations (honest)
 
 - Surrogates are **not production-grade**: generalization depends strongly on coverage in \((T_e, L_x)\), and the FNO head design / normalization are still being iterated on.
+- The **MLP** path can still show non-physical bumps for some parameters, is sensitive to high-frequency numerical noise in PIC outputs, and does not yet have systematic error benchmarks.
 - **Sweep data and plots are not in Git** (large); reproduce by running `main.py` locally.
 
 ### Possible next steps
