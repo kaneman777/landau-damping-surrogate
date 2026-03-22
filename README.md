@@ -97,8 +97,8 @@ Large or regenerable artifacts are listed in [`.gitignore`](.gitignore), includi
 ## Authors & acknowledgments
 
 - **Surrogate extensions**: (add your name / GitHub)  
-- **Original PIC**: [Antoine Tavant](https://github.com/antoinelpp)  
-- **Thanks**: Professor Shinsuke Fujioka (Osaka Univ.) for research context on surrogates.
+- **Original PIC**: [Antoine Tavant](https://github.com/antoinelpp/1d-pic-electrostatic)
+
 
 ## License
 
