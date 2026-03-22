@@ -25,8 +25,6 @@ var/
 *.egg
 
 # PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
 
@@ -57,44 +55,42 @@ docs/_build/
 # PyBuilder
 target/
 
-\.ipynb_checkpoints/
+.ipynb_checkpoints/
 
 .pytest*
 
 *.dat
 
-#Ropeproject
+# Ropeproject
 .ropeproject
 
-#Developpement files
+# Development files
 dev.ipynb
 
 *.h5
 
-# Data files (巨大なのでGitHubには上げない)
+# --- Project-specific: large / regenerable data (do not commit) ---
 *.npy
 *.csv
-sweep_2d_results/
-
-# 巨大なデータファイルとフォルダを完全に除外
 data/
 output_data/
-sweep_2d_results/
 cases/
-*.npy
-*.csv
+sweep_2d_results/
 
-# 画像やプロット結果（README用以外）
+# Plot outputs (regenerate with main.py / training scripts)
 output_plots/
 *.png
 *.jpg
 *.pdf
 
-# プロファイルデータ
+# Saved model weights & normalization tensors (retrain to reproduce)
+*.pth
+surrogate/models/
+
+# Profiling
 program.prof
 
-# 仮想環境やipynbのチェックポイント
-.ipynb_checkpoints/
+# Virtual environments
 venv/
 .env
 .venv/

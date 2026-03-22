@@ -4,56 +4,66 @@ import glob
 import os
 from scipy.signal import savgol_filter
 
-def load_and_preprocess(data_dir="sweep_2d_results/data"):
-    all_inputs = []
-    all_targets = []
+def load_and_preprocess_fno(data_dir="sweep_2d_results/data"):
+    all_params = []   # Inputs: [Te, Lx]
+    all_curves = []   # Targets: [Log_E_0, Log_E_1, ..., Log_E_999]
     
     files = glob.glob(os.path.join(data_dir, "*.npy"))
     if not files:
-        # 階層が違う場合を考慮して一つ上も探す
         files = glob.glob(os.path.join("../", data_dir, "*.npy"))
         
     if not files:
-        print("Error: data files not found. Check your directory.")
+        print("Error: data files not found.")
         return
 
-    print(f"Loading {len(files)} files...")
+    print(f"Loading {len(files)} simulations for FNO...")
 
     for f in files:
         data = np.load(f, allow_pickle=True).item()
         te, lx, t, energy = data['te'], data['lx'], data['t'], data['energy']
         
-        # 初期5%をカット
+        # 1. Cut initial transient (same as before)
         start_idx = int(len(t) * 0.05)
-        t_s, e_s = t[start_idx:], energy[start_idx:]
+        e_s = energy[start_idx:]
 
-        #1 対数スケール (Energy -> Log10)
+        # 2. Log-scale transform
         log_e = np.log10(np.maximum(e_s, 1e-25))
 
-        # 2. 【ここに追加！】クレンジング（平滑化）
-        # window_length: 51（500点に対して約1割の窓幅）
-        # polyorder: 3（3次多項式で近似）
-        if len(log_e) > 51: # データ点数が窓幅より多い場合のみ実行
+        # 3. Smoothing (Savitzky-Golay) 
+        # FNO is a filter itself, but keeping this helps remove extreme PIC spikes
+        if len(log_e) > 51:
             log_e = savgol_filter(log_e, window_length=51, polyorder=3)
 
-        for i in range(len(t_s)):
-            all_inputs.append([te, lx, t_s[i]])
-            all_targets.append([log_e[i]])
+        # --- IMPORTANT CHANGE FOR FNO ---
+        # Instead of looping through time steps, we store the WHOLE curve
+        # We also truncate/pad to a fixed length (e.g., 1000 steps) for batching
+        target_length = 1000 
+        if len(log_e) >= target_length:
+            log_e = log_e[:target_length] # Truncate if too long
+            all_params.append([te, lx])
+            all_curves.append(log_e)
+        # --------------------------------
 
-    inputs = torch.tensor(all_inputs, dtype=torch.float32)
-    targets = torch.tensor(all_targets, dtype=torch.float32)
+    # Convert to Tensors
+    # X shape: [Num_Simulations, 2]
+    # Y shape: [Num_Simulations, 1000]
+    X = torch.tensor(all_params, dtype=torch.float32)
+    Y = torch.tensor(all_curves, dtype=torch.float32)
 
-    # 正規化用のパラメータを計算・保存
-    in_min = inputs.min(dim=0)[0]
-    in_max = inputs.max(dim=0)[0]
-    inputs_norm = (inputs - in_min) / (in_max - in_min)
+    # Normalization (Te and Lx only)
+    in_min = X.min(dim=0)[0]
+    in_max = X.max(dim=0)[0]
+    X_norm = (X - in_min) / (in_max - in_min)
 
-    # 後で使うために保存
+    # Save normalization params for the meeting/future use
     os.makedirs("surrogate/models", exist_ok=True)
-    torch.save({'min': in_min, 'max': in_max}, "surrogate/models/norm_params.pth")
+    torch.save({'min': in_min, 'max': in_max}, "surrogate/models/fno_norm_params.pth")
 
-    print(f"Pre-processing complete. Samples: {len(inputs_norm)}")
-    return inputs_norm, targets
+    print(f"FNO Pre-processing complete.")
+    print(f"Input shape (Params): {X_norm.shape}") # e.g., [3000, 2]
+    print(f"Output shape (Curves): {Y.shape}")     # e.g., [3000, 1000]
+    
+    return X_norm, Y
 
 if __name__ == "__main__":
-    load_and_preprocess()
+    load_and_preprocess_fno()
