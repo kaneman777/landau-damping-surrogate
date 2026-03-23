@@ -6,7 +6,7 @@ from simulation import run_simulation
 
 
 def save_comparison_plot(result, te_val, lx_val, gamma_theory, fname):
-    """2次元スイープ用の比較プロット保存"""
+    """Save comparison plot (PIC vs theory) for 2D parameter sweeps."""
     plt.figure(figsize=(10, 6))
     plt.semilogy(
         result["t_energy"],
@@ -112,8 +112,8 @@ if __name__ == "__main__":
 
     print("\n[SUCCESS] Random sweep completed. Check 'sweep_2d_results/'")
 
-    # --- 旧: グリッドスイープ（Te_list × lx_list）を使う場合は、上のループをコメントアウトして
-    #     以下のように別スクリプト化するか、このブロックを復元してください。
+    # --- Legacy: for a grid sweep (Te_list × lx_list), comment out the loop above
+    #     and restore or move this block into a separate script.
     #
     # te_list = [100, 300, 500, 700, 900, 1100, 1300, 1500, 1700]
     # lx_list = [0.005, 0.01, 0.015, 0.02]

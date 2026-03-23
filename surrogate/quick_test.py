@@ -1,4 +1,4 @@
-# surrogate/quick_test.py として保存して実行
+# Run from repo root: python surrogate/quick_test.py
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,32 +7,31 @@ import os
 import time
 
 def quick_check(te, lx):
-    # 1. モデルの準備
+    # 1. Load model
     model = LandauSurrogate()
     model.load_state_dict(torch.load("surrogate/models/landau_model.pth"))
     model.eval()
     
-    # 2. 正規化パラメータのロード
+    # 2. Load normalization parameters
     norm = torch.load("surrogate/models/norm_params.pth")
     in_min, in_max = norm['min'], norm['max']
     
-    # 3. 予測
+    # 3. Predict
     t_eval = np.linspace(0, 1e-7, 500)
     inputs = torch.tensor([[te, lx, t] for t in t_eval], dtype=torch.float32)
     inputs_norm = (inputs - in_min) / (in_max - in_min)
     
-    # --- 追加：計測開始 ---
-    # 500点一気に予測するのにかかる時間を計測
-    start_time = time.perf_counter() # より高精度なタイマー
+    # --- Time batch inference (500 points) ---
+    start_time = time.perf_counter()  # High-resolution timer
     with torch.no_grad():
-        log_e_pred = model(inputs_norm).flatten().numpy() # flatten()を追加して1次元に
-    
-    # 4. (オプション) もしPICの元データがあれば重ねる
+        log_e_pred = model(inputs_norm).flatten().numpy()  # 1D array of predictions
+
+    # 4. (Optional) Overlay original PIC data if present
     data_path = f"sweep_2d_results/data/data_Lx{lx}_Te{te}.npy"
     plt.figure(figsize=(10, 6))
     
     end_time = time.perf_counter()
-    runtime_ms = (end_time - start_time) * 1000  # ms単位に変換
+    runtime_ms = (end_time - start_time) * 1000  # Convert to ms
 
 
     if os.path.exists(data_path):
@@ -41,7 +40,6 @@ def quick_check(te, lx):
     
     plt.semilogy(t_eval, 10**log_e_pred, 'r-', linewidth=2, label=f'AI Surrogate ({te}eV)')
    
-   # --- 変更：タイトルにRuntimeを表示 ---
     plt.title(f"AI Prediction (Te={te}eV, Lx={lx}cm)\nRuntime: {runtime_ms:.4f} ms")
     # ----------------------------------
     plt.xlabel("Time [s]")
@@ -53,14 +51,14 @@ def quick_check(te, lx):
     return runtime_ms
 
 if __name__ == "__main__":
-   # 100から2000まで、200刻みで一気にプロットしてみる
+    # Example sweep over electron temperatures (eV)
     temperatures = [100, 500, 1000, 1500, 2000]
     runtimes = []
     for t in temperatures:
         rt = quick_check(t, 0.01)
         runtimes.append(rt)
 
-    # 全体の平均を出力
+    # Print mean runtime across temperatures
     print("\n" + "="*30)
     print(f"Average Runtime: {np.mean(runtimes):.4f} ms")
     print("="*30)

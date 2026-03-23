@@ -1,4 +1,4 @@
-# もし evaluate.py をまだ作っていなければ、これを使ってください
+# Lightweight evaluation / plotting helper for the MLP surrogate
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,11 +9,11 @@ def quick_check(te, lx):
     model.load_state_dict(torch.load("surrogate/models/landau_model.pth"))
     model.eval()
     
-    # 正規化パラメータのロード
+    # Load normalization parameters
     norm = torch.load("surrogate/models/norm_params.pth")
     in_min, in_max = norm['min'], norm['max']
     
-    # 予測用の時間軸
+    # Time axis for prediction
     t_eval = np.linspace(0, 1e-7, 500)
     inputs = torch.tensor([[te, lx, t] for t in t_eval], dtype=torch.float32)
     inputs_norm = (inputs - in_min) / (in_max - in_min)
@@ -27,5 +27,5 @@ def quick_check(te, lx):
     plt.legend()
     plt.show()
 
-# 学習が終わったら、これをつぶやいてください
+# After training, uncomment to run:
 # quick_check(te=500, lx=0.01)
