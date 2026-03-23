@@ -11,7 +11,9 @@ def quick_check(te, lx):
     
     # Load normalization parameters
     norm = torch.load("surrogate/models/norm_params.pth")
-    in_min, in_max = norm['min'], norm['max']
+    in_min, in_max = norm["min"], norm["max"]
+    out_mean = norm.get("out_mean", torch.tensor([0.0]))
+    out_std = norm.get("out_std", torch.tensor([1.0]))
     
     # Time axis for prediction
     t_eval = np.linspace(0, 1e-7, 500)
@@ -19,7 +21,8 @@ def quick_check(te, lx):
     inputs_norm = (inputs - in_min) / (in_max - in_min)
     
     with torch.no_grad():
-        log_e_pred = model(inputs_norm).numpy()
+        y_pred_norm = model(inputs_norm)
+        log_e_pred = (y_pred_norm * out_std + out_mean).numpy()
     
     plt.semilogy(t_eval, 10**log_e_pred, 'r-', label=f'AI: {te}eV')
     plt.title(f"AI Prediction at Te={te}eV, Lx={lx}cm")

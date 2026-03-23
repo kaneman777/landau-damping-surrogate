@@ -1,3 +1,5 @@
+import time
+import argparse
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -7,26 +9,27 @@ from model import LandauSurrogate
 import os
 
 
-def train():
+def train(lambda_p=0.001, epochs=150):
     # 1. Load data
     inputs, targets = load_and_preprocess()
     
     dataset = TensorDataset(inputs, targets)
     loader = DataLoader(dataset, batch_size=4096, shuffle=True)
+    print(f"Batches per epoch: {len(loader)} (batch_size=4096)")
 
     model = LandauSurrogate()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.MSELoss()
 
-    epochs = 150  # Slightly longer run helps stability with the physics penalty
-    lambda_p = 0.001  # Strength of physics penalty (reasonable starting value)
+    # epochs: training length; lambda_p: physics-penalty strength
     
     print(f"Starting Physics-Informed training (lambda_p={lambda_p})...")
 
     for epoch in range(epochs):
         model.train()
         total_loss = 0
-        
+        t_epoch = time.perf_counter()
+
         for batch_x, batch_y in loader:
             # --- Enable gradients w.r.t. inputs for physics penalty ---
             batch_x.requires_grad = True
@@ -59,10 +62,17 @@ def train():
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
-        
+
         avg_loss = total_loss / len(loader)
+        epoch_s = time.perf_counter() - t_epoch
+        if epoch == 0:
+            print(f"Epoch 1 done in {epoch_s:.1f}s (if this is huge, reduce data or max_points_per_file).")
         if (epoch + 1) % 10 == 0:
-            print(f"Epoch [{epoch+1}/{epochs}], Avg Loss: {avg_loss:.6f} (MSE: {loss_mse.item():.6f}, Phys: {loss_physics.item():.6f})")
+            print(
+                f"Epoch [{epoch+1}/{epochs}], Avg Loss: {avg_loss:.6f} "
+                f"(MSE: {loss_mse.item():.6f}, Phys: {loss_physics.item():.6f}), "
+                f"last epoch {epoch_s:.1f}s"
+            )
 
     # Save checkpoint
     os.makedirs("surrogate/models", exist_ok=True)
@@ -70,4 +80,8 @@ def train():
     print("Training complete. Physics-Informed Model saved.")
 
 if __name__ == "__main__":
-    train()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--lambda_p", type=float, default=0.001, help="Physics loss weight")
+    parser.add_argument("--epochs", type=int, default=150, help="Training epochs")
+    args = parser.parse_args()
+    train(lambda_p=args.lambda_p, epochs=args.epochs)
