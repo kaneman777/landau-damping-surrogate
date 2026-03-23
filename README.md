@@ -32,6 +32,31 @@ Everything here is **work in progress** — models, metrics, and scripts may cha
 2. Optional extra inputs (e.g. `kld`, \(\gamma\)) if read from `.npy`.
 3. Systematic benchmarks (per-parameter errors, failure maps).
 
+### MLP vs FNO comparison (current snapshot)
+
+The repo now includes a direct comparator (`surrogate/compare_models.py`) that evaluates both models on the same split/seed.
+
+Example command:
+
+```powershell
+python surrogate/compare_models.py --split test --seed 42 --gamma_theory_floor 1e-8
+```
+
+Latest test-split snapshot (seed=42, n_test=28):
+
+| Model | Curve MSE (log10 E) | Curve MAE (log10 E) |
+|------|----------------------|---------------------|
+| MLP | 0.195 | 0.329 |
+| FNO-style | 0.834 | 0.693 |
+
+Interpretation: in the current setup, the pointwise MLP baseline is more accurate than the current FNO-style curve model.  
+This does **not** rule out neural operators in general; it indicates the present FNO-style head/configuration is not yet a good fit for this dataset.
+
+Suggested plots for slides/README (good + failure case):
+
+- `surrogate/outputs/run_20260323_160045_lambda5e-4/mlp_quick_te500_lx0.0100.png` (reasonable agreement)
+- `surrogate/outputs/run_20260323_160045_lambda5e-4/mlp_quick_te2000_lx0.0100.png` (clear mismatch / stress case)
+
 ---
 
 ## Getting started
